@@ -25,7 +25,7 @@ public class JdbcUserDetailsService implements UserDetailsService {
         }
         return User.withUsername(accountUser.email())
                 .password(accountUser.password())
-                .roles("USER")
+                .authorities(accountUser.roles().toArray(String[]::new))
                 .build();
     }
 }

@@ -8,6 +8,9 @@ import com.acme.accountservice.auth.PasswordPolicyException;
 import com.acme.accountservice.auth.PasswordSameException;
 import com.acme.accountservice.payment.PaymentException;
 import com.acme.accountservice.payment.PeriodFormatException;
+import com.acme.accountservice.auth.RoleNotFoundException;
+import com.acme.accountservice.auth.UserManagementException;
+import com.acme.accountservice.auth.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
@@ -50,6 +53,28 @@ public class ApiExceptionHandler {
             HttpServletRequest request
     ) {
         return badRequest(request, exception.getMessage());
+    }
+
+    @ExceptionHandler(UserManagementException.class)
+    public ResponseEntity<Map<String, Object>> handleUserManagementError(
+            UserManagementException exception,
+            HttpServletRequest request
+    ) {
+        return badRequest(request, exception.getMessage());
+    }
+
+    @ExceptionHandler({UserNotFoundException.class, RoleNotFoundException.class})
+    public ResponseEntity<Map<String, Object>> handleNotFound(
+            RuntimeException exception,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                "timestamp", Instant.now().toString(),
+                "status", HttpStatus.NOT_FOUND.value(),
+                "error", HttpStatus.NOT_FOUND.getReasonPhrase(),
+                "message", exception.getMessage(),
+                "path", request.getRequestURI()
+        ));
     }
 
     private ResponseEntity<Map<String, Object>> badRequest(

@@ -17,3 +17,15 @@ CREATE TABLE IF NOT EXISTS payments (
     salary BIGINT NOT NULL CHECK (salary >= 0),
     CONSTRAINT payments_employee_period_unique UNIQUE (employee, period)
 );
+
+CREATE TABLE IF NOT EXISTS roles (
+    name VARCHAR(50) PRIMARY KEY
+);
+
+CREATE TABLE IF NOT EXISTS user_roles (
+    user_id BIGINT NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    PRIMARY KEY (user_id, role),
+    CONSTRAINT user_roles_user_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT user_roles_role_fk FOREIGN KEY (role) REFERENCES roles(name)
+);

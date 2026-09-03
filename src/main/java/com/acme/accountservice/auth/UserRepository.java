@@ -26,6 +26,11 @@ public class UserRepository {
         return count != null && count > 0;
     }
 
+    public int countUsers() {
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.class);
+        return count == null ? 0 : count;
+    }
+
     public AccountUser save(String name, String lastname, String email, String password) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
@@ -54,15 +59,58 @@ public class UserRepository {
                 FROM users
                 WHERE LOWER(email) = LOWER(?)
                 """,
-                (resultSet, rowNum) -> new AccountUser(
-                        resultSet.getLong("id"),
-                        resultSet.getString("name"),
-                        resultSet.getString("lastname"),
-                        resultSet.getString("email"),
-                        resultSet.getString("password")
-                ),
+                (resultSet, rowNum) -> mapUser(resultSet),
                 email
         );
+    }
+
+    public AccountUser findById(long id) {
+        return jdbcTemplate.queryForObject(
+                "SELECT id, name, lastname, email, password FROM users WHERE id = ?",
+                (resultSet, rowNum) -> mapUser(resultSet),
+                id
+        );
+    }
+
+    public java.util.List<AccountUser> findAll() {
+        return jdbcTemplate.query(
+                "SELECT id, name, lastname, email, password FROM users ORDER BY id",
+                (resultSet, rowNum) -> mapUser(resultSet)
+        );
+    }
+
+    public java.util.List<String> findRoles(long userId) {
+        return jdbcTemplate.queryForList(
+                        "SELECT role FROM user_roles WHERE user_id = ?",
+                        String.class,
+                        userId
+                ).stream()
+                .sorted()
+                .toList();
+    }
+
+    public void addRole(long userId, String role) {
+        jdbcTemplate.update(
+                "INSERT INTO user_roles (user_id, role) VALUES (?, ?)",
+                userId,
+                role
+        );
+    }
+
+    public void removeRole(long userId, String role) {
+        jdbcTemplate.update(
+                "DELETE FROM user_roles WHERE user_id = ? AND role = ?",
+                userId,
+                role
+        );
+    }
+
+    public void deletePayments(String email) {
+        jdbcTemplate.update("DELETE FROM payments WHERE LOWER(employee) = LOWER(?)", email);
+    }
+
+    public void deleteUser(long userId) {
+        jdbcTemplate.update("DELETE FROM users WHERE id = ?", userId);
     }
 
     public void updatePassword(String email, String password) {
@@ -70,6 +118,18 @@ public class UserRepository {
                 "UPDATE users SET password = ? WHERE LOWER(email) = LOWER(?)",
                 password,
                 email
+        );
+    }
+
+    private AccountUser mapUser(java.sql.ResultSet resultSet) throws java.sql.SQLException {
+        long id = resultSet.getLong("id");
+        return new AccountUser(
+                id,
+                resultSet.getString("name"),
+                resultSet.getString("lastname"),
+                resultSet.getString("email"),
+                resultSet.getString("password"),
+                findRoles(id)
         );
     }
 }
