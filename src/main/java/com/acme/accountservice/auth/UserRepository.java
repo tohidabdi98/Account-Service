@@ -55,7 +55,7 @@ public class UserRepository {
     public AccountUser findByEmailIgnoreCase(String email) {
         return jdbcTemplate.queryForObject(
                 """
-                SELECT id, name, lastname, email, password
+                SELECT id, name, lastname, email, password, locked, failed_attempts
                 FROM users
                 WHERE LOWER(email) = LOWER(?)
                 """,
@@ -66,7 +66,7 @@ public class UserRepository {
 
     public AccountUser findById(long id) {
         return jdbcTemplate.queryForObject(
-                "SELECT id, name, lastname, email, password FROM users WHERE id = ?",
+                "SELECT id, name, lastname, email, password, locked, failed_attempts FROM users WHERE id = ?",
                 (resultSet, rowNum) -> mapUser(resultSet),
                 id
         );
@@ -74,7 +74,7 @@ public class UserRepository {
 
     public java.util.List<AccountUser> findAll() {
         return jdbcTemplate.query(
-                "SELECT id, name, lastname, email, password FROM users ORDER BY id",
+                "SELECT id, name, lastname, email, password, locked, failed_attempts FROM users ORDER BY id",
                 (resultSet, rowNum) -> mapUser(resultSet)
         );
     }
@@ -121,6 +121,40 @@ public class UserRepository {
         );
     }
 
+    public int incrementFailedAttempts(String email) {
+        jdbcTemplate.update(
+                "UPDATE users SET failed_attempts = failed_attempts + 1 WHERE LOWER(email) = LOWER(?)",
+                email
+        );
+        Integer attempts = jdbcTemplate.queryForObject(
+                "SELECT failed_attempts FROM users WHERE LOWER(email) = LOWER(?)",
+                Integer.class,
+                email
+        );
+        return attempts == null ? 0 : attempts;
+    }
+
+    public void resetFailedAttempts(String email) {
+        jdbcTemplate.update(
+                "UPDATE users SET failed_attempts = 0 WHERE LOWER(email) = LOWER(?)",
+                email
+        );
+    }
+
+    public void lockUser(String email) {
+        jdbcTemplate.update(
+                "UPDATE users SET locked = TRUE WHERE LOWER(email) = LOWER(?)",
+                email
+        );
+    }
+
+    public void unlockUser(String email) {
+        jdbcTemplate.update(
+                "UPDATE users SET locked = FALSE, failed_attempts = 0 WHERE LOWER(email) = LOWER(?)",
+                email
+        );
+    }
+
     private AccountUser mapUser(java.sql.ResultSet resultSet) throws java.sql.SQLException {
         long id = resultSet.getLong("id");
         return new AccountUser(
@@ -129,7 +163,9 @@ public class UserRepository {
                 resultSet.getString("lastname"),
                 resultSet.getString("email"),
                 resultSet.getString("password"),
-                findRoles(id)
+                findRoles(id),
+                resultSet.getBoolean("locked"),
+                resultSet.getInt("failed_attempts")
         );
     }
 }

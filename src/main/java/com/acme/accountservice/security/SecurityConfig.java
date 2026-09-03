@@ -25,7 +25,7 @@ public class SecurityConfig {
             RestAccessDeniedHandler restAccessDeniedHandler
     ) throws Exception {
         http
-                .httpBasic(Customizer.withDefaults())
+                .httpBasic(basic -> basic.authenticationEntryPoint(restAuthenticationEntryPoint))
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(restAuthenticationEntryPoint)
                         .accessDeniedHandler(restAccessDeniedHandler))
@@ -33,13 +33,17 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/signup").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/changepass")
+                        .hasAnyRole("USER", "ACCOUNTANT", "ADMINISTRATOR")
                         .requestMatchers(HttpMethod.POST, "/api/acct/payments").hasRole("ACCOUNTANT")
                         .requestMatchers(HttpMethod.PUT, "/api/acct/payments").hasRole("ACCOUNTANT")
                         .requestMatchers(HttpMethod.GET, "/api/empl/payment", "/api/empl/payment/")
                         .hasAnyRole("USER", "ACCOUNTANT")
                         .requestMatchers("/api/admin/user/**").hasRole("ADMINISTRATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/security/events", "/api/security/events/")
+                        .hasRole("AUDITOR")
                         .requestMatchers("/h2-console/**").permitAll()
-                        .anyRequest().authenticated())
+                        .anyRequest().denyAll())
                 .sessionManagement(sessions -> sessions
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 

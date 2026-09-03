@@ -6,6 +6,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.acme.accountservice.event.SecurityEventActions;
+import com.acme.accountservice.event.SecurityEventService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,9 +20,11 @@ import org.springframework.stereotype.Component;
 public class RestAccessDeniedHandler implements AccessDeniedHandler {
 
     private final ObjectMapper objectMapper;
+    private final SecurityEventService eventService;
 
-    public RestAccessDeniedHandler(ObjectMapper objectMapper) {
+    public RestAccessDeniedHandler(ObjectMapper objectMapper, SecurityEventService eventService) {
         this.objectMapper = objectMapper;
+        this.eventService = eventService;
     }
 
     @Override
@@ -29,6 +33,12 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
             HttpServletResponse response,
             AccessDeniedException accessDeniedException
     ) throws IOException, ServletException {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        String subject = authentication == null || authentication.getName() == null
+                ? "Anonymous"
+                : authentication.getName();
+        eventService.log(SecurityEventActions.ACCESS_DENIED, subject, request.getRequestURI(), request.getRequestURI());
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");

@@ -21,6 +21,7 @@ public class RoleDataLoader implements ApplicationRunner {
         jdbcTemplate.update("MERGE INTO roles (name) KEY (name) VALUES (?)", RoleNames.ADMINISTRATOR);
         jdbcTemplate.update("MERGE INTO roles (name) KEY (name) VALUES (?)", RoleNames.USER);
         jdbcTemplate.update("MERGE INTO roles (name) KEY (name) VALUES (?)", RoleNames.ACCOUNTANT);
+        jdbcTemplate.update("MERGE INTO roles (name) KEY (name) VALUES (?)", RoleNames.AUDITOR);
         jdbcTemplate.update(
                 """
                 INSERT INTO user_roles (user_id, role)
