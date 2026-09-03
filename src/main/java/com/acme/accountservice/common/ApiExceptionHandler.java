@@ -6,6 +6,8 @@ import java.util.Map;
 import com.acme.accountservice.auth.UserExistsException;
 import com.acme.accountservice.auth.PasswordPolicyException;
 import com.acme.accountservice.auth.PasswordSameException;
+import com.acme.accountservice.payment.PaymentException;
+import com.acme.accountservice.payment.PeriodFormatException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
@@ -36,6 +38,14 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler({PasswordPolicyException.class, PasswordSameException.class})
     public ResponseEntity<Map<String, Object>> handlePasswordError(
+            RuntimeException exception,
+            HttpServletRequest request
+    ) {
+        return badRequest(request, exception.getMessage());
+    }
+
+    @ExceptionHandler({PaymentException.class, PeriodFormatException.class})
+    public ResponseEntity<Map<String, Object>> handlePaymentError(
             RuntimeException exception,
             HttpServletRequest request
     ) {
