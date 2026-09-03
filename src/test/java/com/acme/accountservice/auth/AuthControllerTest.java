@@ -4,6 +4,9 @@ import com.acme.accountservice.common.ApiExceptionHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -14,6 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AuthController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @Import(ApiExceptionHandler.class)
 class AuthControllerTest {
 
@@ -40,7 +44,22 @@ class AuthControllerTest {
                           "email": "johndoe@acme.com"
                         }
                         """))
+                .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.password").doesNotExist());
+    }
+
+    @TestConfiguration
+    static class TestConfig {
+
+        @Bean
+        UserService userService() {
+            return new UserService(null, null) {
+                @Override
+                public AccountUser register(SignupRequest request) {
+                    return new AccountUser(1L, request.name(), request.lastname(), request.email(), "encoded");
+                }
+            };
+        }
     }
 
     @Test

@@ -1,11 +1,12 @@
 package com.acme.accountservice.auth;
 
 public record SignupResponse(
+        Long id,
         String name,
         String lastname,
         String email
 ) {
-    public static SignupResponse from(SignupRequest request) {
-        return new SignupResponse(request.name(), request.lastname(), request.email());
+    public static SignupResponse from(AccountUser user) {
+        return new SignupResponse(user.id(), user.name(), user.lastname(), user.email());
     }
 }

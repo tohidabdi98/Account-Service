@@ -9,7 +9,7 @@ public record SignupRequest(
         @NotBlank String lastname,
         @NotBlank
         @Email
-        @Pattern(regexp = "^[^@\\s]+@acme\\.com$", message = "Email must be a corporate @acme.com address")
+        @Pattern(regexp = "(?i)^[^@\\s]+@acme\\.com$", message = "Email must be a corporate @acme.com address")
         String email,
         @NotBlank String password
 ) {
